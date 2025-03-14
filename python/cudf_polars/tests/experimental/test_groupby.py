@@ -80,6 +80,12 @@ def test_groupby_agg_config_options(df, op, keys):
     assert_gpu_result_equal(q, engine=engine, check_row_order=False)
 
 
+def test_groupby_agg_empty(df: pl.LazyFrame, engine: pl.GPUEngine) -> None:
+    # https://github.com/rapidsai/cudf/issues/18276
+    q = df.group_by("y").agg()
+    assert_gpu_result_equal(q, engine=engine, check_row_order=False)
+
+
 def test_groupby_raises(df, engine):
     q = df.group_by("y").median()
     with pytest.raises(
