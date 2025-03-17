@@ -54,6 +54,7 @@ def keys(request):
         [pl.col("float").sum().round(decimals=1)],
         [pl.col("float").round(decimals=1).sum()],
         [pl.col("int").first(), pl.col("float").last()],
+        [],
     ],
     ids=lambda aggs: "-".join(map(str, aggs)),
 )
@@ -218,4 +219,9 @@ def test_groupby_maintain_order_random(nrows, nkeys, with_nulls):
 def test_groupby_len_with_nulls():
     df = pl.DataFrame({"a": [1, 1, 1, 2], "b": [1, None, 2, 3]})
     q = df.lazy().group_by("a").agg(pl.col("b").len())
+    assert_gpu_result_equal(q, check_row_order=False)
+
+
+def test_groupby_agg_empty(df):
+    q = df.group_by("key1", 1).agg()
     assert_gpu_result_equal(q, check_row_order=False)
