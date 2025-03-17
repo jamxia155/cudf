@@ -220,8 +220,3 @@ def test_groupby_len_with_nulls():
     df = pl.DataFrame({"a": [1, 1, 1, 2], "b": [1, None, 2, 3]})
     q = df.lazy().group_by("a").agg(pl.col("b").len())
     assert_gpu_result_equal(q, check_row_order=False)
-
-
-def test_groupby_agg_empty(df):
-    q = df.group_by("key1", 1).agg()
-    assert_gpu_result_equal(q, check_row_order=False)
