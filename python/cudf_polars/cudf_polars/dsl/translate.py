@@ -283,15 +283,28 @@ def _(
         inp = translator.translate_ir(n=None)
         aggs = [translate_named_expr(translator, n=e) for e in node.aggs]
         keys = [translate_named_expr(translator, n=e) for e in node.keys]
-    return ir.GroupBy(
-        schema,
-        keys,
-        aggs,
-        node.maintain_order,
-        node.options,
-        translator.config_options,
-        inp,
-    )
+    if len(aggs) == 0:
+        # A GroupBy with no aggregations is logically equivalent to a Distinct
+        # on the Keys. Handling the no-agg case here lets our downstream
+        # expression nodes assume there will always be at least one aggregation.
+        return ir.Distinct(
+            schema,
+            plc.stream_compaction.DuplicateKeepOption.KEEP_ANY,
+            None,
+            node.options.slice,
+            node.maintain_order,
+            ir.Select(schema, keys, True, inp),  # noqa: FBT003
+        )
+    else:
+        return ir.GroupBy(
+            schema,
+            keys,
+            aggs,
+            node.maintain_order,
+            node.options,
+            translator.config_options,
+            inp,
+        )
 
 
 @_translate_ir.register
