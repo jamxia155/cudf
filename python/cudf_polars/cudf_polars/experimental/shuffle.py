@@ -15,13 +15,13 @@ from cudf_polars.containers import DataFrame
 from cudf_polars.dsl.ir import IR
 from cudf_polars.experimental.base import _concat, get_key_name
 from cudf_polars.experimental.dispatch import generate_ir_tasks, lower_ir_node
+from cudf_polars.experimental.parallel import PartitionInfo
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
 
     from cudf_polars.dsl.expr import NamedExpr
     from cudf_polars.experimental.dispatch import LowerIRTransformer
-    from cudf_polars.experimental.parallel import PartitionInfo
     from cudf_polars.typing import Schema
     from cudf_polars.utils.config import ConfigOptions
 
@@ -160,8 +160,6 @@ def _(
     # Simple lower_ir_node handling for the default hash-based shuffle.
     # More-complex logic (e.g. joining and sorting) should
     # be handled separately.
-    from cudf_polars.experimental.parallel import PartitionInfo
-
     (child,) = ir.children
 
     new_child, pi = rec(child)
@@ -202,8 +200,6 @@ def _maybe_shuffle_frame(
     output_count: int,
 ) -> IR:
     # Shuffle `frame` if it isn't already shuffled.
-    from cudf_polars.experimental.parallel import PartitionInfo
-
     if (
         partition_info[frame].partitioned_on == on
         and partition_info[frame].count == output_count
