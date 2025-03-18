@@ -72,15 +72,6 @@ def test_pickle_conditional_join_args():
         pickle.loads(pickle.dumps(node._non_child_args))
 
 
-@pytest.fixture(scope="module")
-def engine():
-    return pl.GPUEngine(
-        raise_on_fail=True,
-        executor="dask-experimental",
-        executor_options={"max_rows_per_partition": 4},
-    )
-
-
 @pytest.mark.parametrize("subset", [None, ["a"], ["a", "b"]])
 @pytest.mark.parametrize("maintain_order", [True, False])
 @pytest.mark.parametrize("keep", ["first", "last", "any", "none"])
