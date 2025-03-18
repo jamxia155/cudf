@@ -53,8 +53,6 @@ def combine(
     -------
     Unified groupby-aggregation decomposition.
     """
-    if len(decompositions) == 0:
-        return [], [], []
     selections, aggregations, reductions = zip(*decompositions, strict=True)
     assert all(isinstance(ne, NamedExpr) for ne in selections)
     return (
