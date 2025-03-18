@@ -38,6 +38,11 @@ class PartitionInfo:
         name = get_key_name(node)
         yield from ((name, i) for i in range(self.count))
 
+    def __repr__(self) -> str:  # noqa: D105
+        return (
+            f"PartitionInfo(count={self.count}, partitioned_on={self.partitioned_on})"
+        )
+
 
 def get_key_name(node: Node) -> str:
     """Generate the key name for a Node."""
