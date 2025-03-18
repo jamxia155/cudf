@@ -13,10 +13,24 @@ import cudf_polars.experimental.groupby
 import cudf_polars.experimental.io
 import cudf_polars.experimental.join
 import cudf_polars.experimental.select
-import cudf_polars.experimental.shuffle  # noqa: F401
-from cudf_polars.dsl.ir import IR, Cache, Filter, HStack, Projection, Select, Union
+import cudf_polars.experimental.shuffle
+from cudf_polars.dsl.expr import Col, NamedExpr
+from cudf_polars.dsl.ir import (
+    IR,
+    Cache,
+    Distinct,
+    Filter,
+    HStack,
+    Projection,
+    Select,
+    Union,
+)
 from cudf_polars.dsl.traversal import CachingVisitor, traversal
-from cudf_polars.experimental.base import PartitionInfo, _concat, get_key_name
+from cudf_polars.experimental.base import (
+    PartitionInfo,
+    _concat,
+    get_key_name,
+)
 from cudf_polars.experimental.dispatch import (
     generate_ir_tasks,
     lower_ir_node,
@@ -302,3 +316,47 @@ generate_ir_tasks.register(Cache, _generate_ir_tasks_pwise)
 generate_ir_tasks.register(Filter, _generate_ir_tasks_pwise)
 generate_ir_tasks.register(HStack, _generate_ir_tasks_pwise)
 generate_ir_tasks.register(Select, _generate_ir_tasks_pwise)
+generate_ir_tasks.register(Distinct, _generate_ir_tasks_pwise)
+
+
+@lower_ir_node.register(Distinct)
+def _(
+    ir: Distinct, rec: LowerIRTransformer
+) -> tuple[IR, MutableMapping[IR, PartitionInfo]]:
+    """
+    Lower a Distinct node.
+
+    Distinct is implemented as a set of per-partition Distinct operations,
+    followed by a Shuffle, followed by a final Distinct.
+    """
+    child, partition_info = rec(ir.children[0])
+    subset = ir.subset or set(ir.schema)
+    partitioned_on = tuple(
+        NamedExpr(name, Col(dtype, name))
+        for name, dtype in ir.schema.items()
+        if name in subset
+    )
+
+    output_count = partition_info[child].count
+    if output_count == 1:
+        new_node = ir.reconstruct([child])
+        partition_info[new_node] = PartitionInfo(count=1, partitioned_on=partitioned_on)
+        return new_node, partition_info
+    else:
+        # Do a shuffle, by
+        shuffle_options: dict[str, Any] = {}  # Unused for now
+        new_child = cudf_polars.experimental.join._maybe_shuffle_frame(
+            child,
+            partitioned_on,
+            partition_info,
+            shuffle_options,
+            output_count,
+        )
+        if child != new_child:
+            ir = ir.reconstruct([new_child])
+
+        partition_info[ir] = PartitionInfo(
+            count=output_count, partitioned_on=partitioned_on
+        )
+
+    return ir, partition_info
