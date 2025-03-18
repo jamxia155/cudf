@@ -34,6 +34,7 @@ from cudf_polars.experimental.dispatch import (
     generate_ir_tasks,
     lower_ir_node,
 )
+from cudf_polars.utils.config import ConfigOptions
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
@@ -343,7 +344,7 @@ def _(
         return new_node, partition_info
     else:
         # Do a shuffle, by
-        shuffle_options: dict[str, Any] = {}  # Unused for now
+        shuffle_options = ConfigOptions({})
         new_child = cudf_polars.experimental.join._maybe_shuffle_frame(
             child,
             partitioned_on,
