@@ -13,7 +13,6 @@ import cudf_polars.experimental.groupby
 import cudf_polars.experimental.io
 import cudf_polars.experimental.join
 import cudf_polars.experimental.select
-import cudf_polars.experimental.shuffle
 from cudf_polars.dsl.expr import Col, NamedExpr
 from cudf_polars.dsl.ir import (
     IR,

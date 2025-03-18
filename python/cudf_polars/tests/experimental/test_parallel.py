@@ -13,6 +13,7 @@ from polars.testing import assert_frame_equal
 
 from cudf_polars import Translator
 from cudf_polars.dsl.traversal import traversal
+from cudf_polars.testing.asserts import assert_gpu_result_equal
 
 
 def test_evaluate_dask():
@@ -69,3 +70,31 @@ def test_pickle_conditional_join_args():
     ir = Translator(q._ldf.visit(), GPUEngine()).translate_ir()
     for node in traversal([ir]):
         pickle.loads(pickle.dumps(node._non_child_args))
+
+
+@pytest.fixture(scope="module")
+def engine():
+    return pl.GPUEngine(
+        raise_on_fail=True,
+        executor="dask-experimental",
+        executor_options={"max_rows_per_partition": 4},
+    )
+
+
+@pytest.mark.parametrize("subset", [None, ["a"], ["a", "b"]])
+@pytest.mark.parametrize("maintain_order", [True, False])
+@pytest.mark.parametrize("keep", ["first", "last", "any", "none"])
+def test_unique(
+    engine: pl.GPUEngine,
+    subset: list[str] | None,
+    maintain_order: bool,  # noqa: FBT001
+    keep: str,
+) -> None:
+    df = pl.LazyFrame(
+        {
+            "a": [0, 1] * 4,
+            "b": [0, 1, 2, 3] * 2,
+        }
+    )
+    q = df.unique(subset=subset, maintain_order=maintain_order, keep=keep)
+    assert_gpu_result_equal(q, engine=engine, check_row_order=False)
