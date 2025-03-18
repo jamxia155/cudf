@@ -343,13 +343,12 @@ def _(
         partition_info[new_node] = PartitionInfo(count=1, partitioned_on=partitioned_on)
         return new_node, partition_info
     else:
-        # Do a shuffle, by
-        shuffle_options = ConfigOptions({})
+        config_options = ConfigOptions({})
         new_child = cudf_polars.experimental.join._maybe_shuffle_frame(
             child,
             partitioned_on,
             partition_info,
-            shuffle_options,
+            config_options,
             output_count,
         )
         if child != new_child:
