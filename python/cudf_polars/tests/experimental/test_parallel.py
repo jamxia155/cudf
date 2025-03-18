@@ -75,17 +75,25 @@ def test_pickle_conditional_join_args():
 @pytest.mark.parametrize("subset", [None, ["a"], ["a", "b"]])
 @pytest.mark.parametrize("maintain_order", [True, False])
 @pytest.mark.parametrize("keep", ["first", "last", "any", "none"])
+@pytest.mark.parametrize("n_repeat", [1, 2])
 def test_unique(
     engine: pl.GPUEngine,
     subset: list[str] | None,
     maintain_order: bool,  # noqa: FBT001
     keep: str,
+    n_repeat: int,
 ) -> None:
     df = pl.LazyFrame(
         {
-            "a": [0, 1] * 4,
-            "b": [0, 1, 2, 3] * 2,
+            "a": [0, 1] * n_repeat * 2,
+            "b": [0, 1, 2, 3] * n_repeat,
         }
     )
+    length = df.select(pl.len()).collect().item()
+    # check that we're on either side of the engine's max_rows_per_partition
+    if n_repeat == 1:
+        assert length <= engine.config["executor_options"]["max_rows_per_partition"]
+    else:
+        assert length > engine.config["executor_options"]["max_rows_per_partition"]
     q = df.unique(subset=subset, maintain_order=maintain_order, keep=keep)
     assert_gpu_result_equal(q, engine=engine, check_row_order=False)
