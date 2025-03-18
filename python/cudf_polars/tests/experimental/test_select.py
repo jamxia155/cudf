@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES.
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -8,15 +8,6 @@ import pytest
 import polars as pl
 
 from cudf_polars.testing.asserts import assert_gpu_result_equal
-
-
-@pytest.fixture(scope="module")
-def engine():
-    return pl.GPUEngine(
-        raise_on_fail=True,
-        executor="dask-experimental",
-        executor_options={"max_rows_per_partition": 3},
-    )
 
 
 @pytest.fixture(scope="module")
