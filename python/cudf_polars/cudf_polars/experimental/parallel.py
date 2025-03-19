@@ -9,6 +9,10 @@ import operator
 from functools import reduce
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import cudf_polars.experimental.groupby
+import cudf_polars.experimental.io
+import cudf_polars.experimental.join
+import cudf_polars.experimental.select
 from cudf_polars.dsl.expr import Col, NamedExpr
 from cudf_polars.dsl.ir import (
     IR,
@@ -30,7 +34,6 @@ from cudf_polars.experimental.dispatch import (
     generate_ir_tasks,
     lower_ir_node,
 )
-from cudf_polars.experimental.shuffle import _maybe_shuffle_frame
 from cudf_polars.utils.config import ConfigOptions
 
 if TYPE_CHECKING:
@@ -341,7 +344,7 @@ def _(
         return new_node, partition_info
     else:
         config_options = ConfigOptions({})
-        new_child = _maybe_shuffle_frame(
+        new_child = cudf_polars.experimental.join._maybe_shuffle_frame(
             child,
             partitioned_on,
             partition_info,

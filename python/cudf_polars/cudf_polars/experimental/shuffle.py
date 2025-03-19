@@ -192,34 +192,3 @@ def _(
         partition_info[ir.children[0]].count,
         partition_info[ir].count,
     )
-
-
-def _maybe_shuffle_frame(
-    frame: IR,
-    on: tuple[NamedExpr, ...],
-    partition_info: MutableMapping[IR, PartitionInfo],
-    config_options: ConfigOptions,
-    output_count: int,
-) -> IR:
-    # Shuffle `frame` if it isn't already shuffled.
-    from cudf_polars.experimental.parallel import PartitionInfo
-
-    if (
-        partition_info[frame].partitioned_on == on
-        and partition_info[frame].count == output_count
-    ):
-        # Already shuffled
-        return frame
-    else:
-        # Insert new Shuffle node
-        frame = Shuffle(
-            frame.schema,
-            on,
-            config_options,
-            frame,
-        )
-        partition_info[frame] = PartitionInfo(
-            count=output_count,
-            partitioned_on=on,
-        )
-        return frame
