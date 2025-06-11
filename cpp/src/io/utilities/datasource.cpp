@@ -406,7 +406,7 @@ class remote_file_source : public datasource {
   static std::unique_ptr<kvikio::S3Endpoint> create_s3_endpoint(char const* filepath)
   {
     auto [bucket_name, bucket_object] = kvikio::S3Endpoint::parse_s3_url(filepath);
-    return std::make_unique<kvikio::S3Endpoint>(bucket_name, bucket_object);
+    return std::make_unique<kvikio::S3Endpoint>(std::make_pair(bucket_name, bucket_object));
   }
 
  public:
